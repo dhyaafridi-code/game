@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Boeing NYC Cinematic Edition — ULTIMATE</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <!-- أصوات اللعبة (الأصلية) -->
+    <audio id="bgMusic" preload="auto" loop></audio>
+    <audio id="explosionSound" src="assets/audio/explosion_sound.mp3" preload="auto"></audio>
+    <audio id="coinSound" src="assets/audio/coin_sound.mp3" preload="auto"></audio>
+
+    <!-- NEW: طبقة الإشعارات + لافتة Level Up -->
+    <div id="toastLayer"></div>
+    <div id="levelBanner" class="level-banner hidden"><div class="t">⭐ LEVEL UP!</div><div class="s" id="levelBannerSub"></div></div>
+
+    <!-- شاشة إدخال اسم اللاعب (تظهر أول مرة) -->
+    <div id="nameScreen" class="overlay hidden">
+        <h1>✈️ مرحباً بك في نيويورك</h1>
+        <p>الرجاء إدخال اسم الطيار الخاص بك للبدء</p>
+        <input type="text" id="usernameInput" class="input-box" placeholder="اكتب اسمك هنا..." maxlength="15">
+        <button class="btn" onclick="saveUsername()">دخول إلى اللعبة</button>
+    </div>
+
+    <!-- القائمة الرئيسية -->
+    <div id="mainMenu" class="overlay hidden">
+        <h1>🗽 Boeing NYC Cinematic Edition</h1>
+        <div class="ultimate-tag">ULTIMATE</div>
+        <p id="welcomeUserText" style="color: #4ade80; font-weight: bold; margin-bottom: 8px; font-size: 15px;"></p>
+
+        <div class="lvl-box">
+            <div class="lvl-row"><span id="menuLevel">⭐ Level 1</span><span id="menuXpText">0 / 80 XP</span></div>
+            <div class="bar"><i id="menuXpFill"></i></div>
+        </div>
+        <div class="coins-badge" id="menuCoins">🪙 0</div>
+
+        <!-- شريط اختيار الموسيقى -->
+        <div class="music-bar">
+            <button class="music-btn" onclick="prevMusic()">◀</button>
+            <div class="music-info">
+                <span class="music-label">الموسيقى الخلفية</span>
+                <span id="musicTitleDisplay" class="music-title">موسيقى سينمائية</span>
+            </div>
+            <button class="music-btn" onclick="nextMusic()">▶</button>
+        </div>
+
+        <div class="menu-col">
+            <button class="btn" onclick="startGame()">ابدأ اللعب</button>
+            <div id="menuSelection" class="small"></div>
+            <div class="menu-grid">
+                <button class="btn btn-secondary btn-sm" onclick="openSetup()">🎮 الأوضاع والمدن</button>
+                <button class="btn btn-secondary btn-sm" onclick="openShop()">🛒 متجر الطائرات والقدرات</button>
+                <button class="btn btn-secondary btn-sm" style="background:#1e3a8a;box-shadow:0 5px 0 #1e1b4b;" onclick="openLeaderboard()">🏆 أفضل النتائج</button>
+                <button class="btn btn-secondary btn-sm" onclick="openProfile()">👤 الملف الشخصي</button>
+                <button class="btn btn-secondary btn-sm" onclick="openMissions()">📅 المهمات اليومية<span id="missionBadge" class="badge hidden">0</span></button>
+                <button class="btn btn-secondary btn-sm" onclick="openAchievements()">🏅 الإنجازات</button>
+                <button class="btn btn-secondary btn-sm full" onclick="openSettings()">⚙️ الإعدادات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: شاشة الأوضاع والمدن -->
+    <div id="setupScreen" class="overlay hidden">
+        <h1>🎮 الأوضاع والمدن</h1>
+        <h2>وضع اللعب</h2>
+        <div class="sel-list" id="modeList"></div>
+        <h2>المدينة</h2>
+        <div class="sel-list" id="cityList"></div>
+        <div class="btn-container">
+            <button class="btn btn-secondary" onclick="openMain()">العودة</button>
+            <button class="btn" onclick="startGame()">ابدأ اللعب</button>
+        </div>
+    </div>
+
+    <!-- شاشة لوحة الصدارة -->
+    <div id="leaderboardScreen" class="overlay hidden">
+        <h1>🏆 أفضل النتائج</h1>
+        <p>أعلى نتائجك المحفوظة على هذا الجهاز</p>
+        <div class="leaderboard-list" id="leaderboardList"></div>
+        <button class="btn btn-secondary" onclick="closeLeaderboard()">العودة للقائمة</button>
+    </div>
+
+    <!-- واجهة المتجر -->
+    <div id="shopScreen" class="overlay hidden">
+        <h1>🛒 متجر الطائرات والقدرات الخاصة</h1>
+        <div class="coins-badge" id="totalCoinsDisplay">🪙 رصيدك: 0</div>
+        <div class="tabs">
+            <button class="tab active" id="tabPlanes" onclick="setShopTab('planes')">✈️ Planes</button>
+            <button class="tab" id="tabSkins" onclick="setShopTab('skins')">🎨 Skins</button>
+            <button class="tab" id="tabTrails" onclick="setShopTab('trails')">✨ Trails</button>
+        </div>
+        <p id="shopHint">اختر طائرتك المفضلة وانطلق في سماء نيويورك المتوهجة!</p>
+
+        <div class="chars-grid" id="charsGrid"></div>
+        <div id="shopNotification" class="shop-notification hidden">رسالة التنبيه</div>
+
+        <div class="btn-container">
+            <button class="btn btn-secondary" onclick="closeShop()">العودة</button>
+            <button class="btn" id="actionBtn" onclick="handleShopAction()">شراء / تجهيز</button>
+        </div>
+    </div>
+
+    <!-- NEW: الملف الشخصي -->
+    <div id="profileScreen" class="overlay hidden">
+        <h1>👤 الملف الشخصي</h1>
+        <p id="profName" style="color:#4ade80;font-weight:bold;font-size:16px;margin-bottom:6px;"></p>
+        <div class="lvl-box" style="width:340px">
+            <div class="lvl-row"><span id="profLevel">⭐ Level 1</span><span id="profXpText"></span></div>
+            <div class="bar"><i id="profXpFill"></i></div>
+        </div>
+        <div class="stat-grid" id="profStats"></div>
+        <div class="btn-container">
+            <button class="btn btn-secondary btn-sm" onclick="changeName()">✏️ تغيير الاسم</button>
+            <button class="btn btn-secondary" onclick="openMain()">العودة</button>
+        </div>
+    </div>
+
+    <!-- NEW: المهمات اليومية -->
+    <div id="missionsScreen" class="overlay hidden">
+        <h1>📅 المهمات اليومية</h1>
+        <p>3 مهمات جديدة كل يوم — التقدم محفوظ حتى لو أغلقت اللعبة</p>
+        <div class="list-col" id="missionList"></div>
+        <button class="btn btn-secondary" onclick="openMain()">العودة</button>
+    </div>
+
+    <!-- NEW: الإنجازات -->
+    <div id="achievementsScreen" class="overlay hidden">
+        <h1>🏅 الإنجازات</h1>
+        <p id="achCount"></p>
+        <div class="list-col" id="achList"></div>
+        <button class="btn btn-secondary" onclick="openMain()">العودة</button>
+    </div>
+
+    <!-- NEW: الإعدادات -->
+    <div id="settingsScreen" class="overlay hidden">
+        <h1>⚙️ الإعدادات</h1>
+        <div class="set-row"><span>🔊 الموسيقى</span><input type="range" id="setMusic" min="0" max="100" oninput="onSettingRange()"></div>
+        <div class="set-row"><span>🔊 المؤثرات</span><input type="range" id="setSfx" min="0" max="100" oninput="onSettingRange()"></div>
+        <div class="set-row"><span>🌧️ الطقس</span><button class="tog" id="togWeather" onclick="toggleSetting('weather')">ON</button></div>
+        <div class="set-row"><span>✨ الجسيمات</span><button class="tog" id="togParticles" onclick="toggleSetting('particles')">ON</button></div>
+        <div class="set-row"><span>📳 اهتزاز الشاشة</span><button class="tog" id="togShake" onclick="toggleSetting('shake')">ON</button></div>
+        <div class="set-row"><span>🎨 جودة التأثيرات</span>
+            <div class="q-group">
+                <button class="tog" id="qLow" onclick="setQuality('low')">Low</button>
+                <button class="tog" id="qMedium" onclick="setQuality('medium')">Med</button>
+                <button class="tog" id="qHigh" onclick="setQuality('high')">High</button>
+            </div>
+        </div>
+        <div class="set-row"><span>🖥️ وضع العرض</span>
+            <div class="q-group">
+                <button class="tog" id="dAuto" onclick="setDisplay('auto')">تلقائي</button>
+                <button class="tog" id="dPc" onclick="setDisplay('pc')">حاسوب</button>
+                <button class="tog" id="dPhone" onclick="setDisplay('phone')">هاتف</button>
+            </div>
+        </div>
+        <div class="set-row"><span>💾 نسخة احتياطية</span>
+            <div class="q-group">
+                <button class="tog" onclick="exportSave()">⬇️ تصدير</button>
+                <button class="tog" onclick="importSave()">⬆️ استيراد</button>
+            </div>
+        </div>
+        <div style="height:8px"></div>
+        <button class="btn btn-secondary" onclick="openMain()">العودة</button>
+    </div>
+
+    <!-- NEW: Cinematic Intro -->
+    <div id="introScreen" class="overlay hidden" onclick="skipIntro()">
+        <div class="intro-main" id="introMain"></div>
+        <div class="intro-sub" id="introSub"></div>
+        <div class="intro-skip">اضغط للتخطي</div>
+    </div>
+
+    <!-- NEW: Game Over -->
+    <div id="gameOverScreen" class="overlay hidden">
+        <div class="go-card">
+            <div class="go-title">💀 GAME OVER</div>
+            <div class="go-new" id="goNew"></div>
+            <div class="go-grid">
+                <div class="go-cell"><span>Score</span><b id="goScore">0</b></div>
+                <div class="go-cell"><span>Best Score</span><b id="goBest">0</b></div>
+                <div class="go-cell"><span>Coins Earned</span><b id="goCoins">0</b></div>
+                <div class="go-cell"><span>XP Earned</span><b id="goXP">0</b></div>
+                <div class="go-cell"><span>Combo</span><b id="goCombo">0</b></div>
+                <div class="go-cell"><span>Distance</span><b id="goDist">0</b></div>
+                <div class="go-cell"><span>Mode</span><b id="goMode">-</b></div>
+                <div class="go-cell"><span>City</span><b id="goCity">-</b></div>
+            </div>
+            <div class="go-btns">
+                <button class="btn btn-sm" onclick="retryGame()">🔄 Retry</button>
+                <button class="btn btn-secondary btn-sm" onclick="goShop()">🛒 Shop</button>
+                <button class="btn btn-secondary btn-sm" onclick="goMenu()">🏠 Main Menu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/00-helpers.js" charset="utf-8"></script>
+<script src="js/01-data.js" charset="utf-8"></script>
+<script src="js/02-save.js" charset="utf-8"></script>
+<script src="js/03-state.js" charset="utf-8"></script>
+<script src="js/04-audio.js" charset="utf-8"></script>
+<script src="js/05-screens.js" charset="utf-8"></script>
+<script src="js/06-progress.js" charset="utf-8"></script>
+<script src="js/07-setup.js" charset="utf-8"></script>
+<script src="js/08-shop.js" charset="utf-8"></script>
+<script src="js/09-canvas.js" charset="utf-8"></script>
+<script src="js/10-images.js" charset="utf-8"></script>
+<script src="js/11-gameplay.js" charset="utf-8"></script>
+<script src="js/12-weather.js" charset="utf-8"></script>
+<script src="js/13-bosses.js" charset="utf-8"></script>
+<script src="js/14-events.js" charset="utf-8"></script>
+<script src="js/15-run.js" charset="utf-8"></script>
+<script src="js/16-update.js" charset="utf-8"></script>
+<script src="js/17-render.js" charset="utf-8"></script>
+<script src="js/18-loop.js" charset="utf-8"></script>
+<script src="js/19-init.js" charset="utf-8"></script>
+</body>
+</html>
